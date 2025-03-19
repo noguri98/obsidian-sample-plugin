@@ -20,6 +20,19 @@ export default class MusicNotePlugin extends Plugin {
         this.toggleButton.style.color = "#8A8A8A";
         this.toggleButton.style.display = "none"; // 기본적으로 숨김
 
+        // 버튼 호버 이벤트 추가
+        this.toggleButton.addEventListener("mouseenter", () => {
+            if (this.isPlaying) {
+                this.toggleButton!.textContent = "Stop"; // 현재 Stop 상태면 Play로 표시
+            } else {
+                this.toggleButton!.textContent = "Play"; // 현재 Play 상태면 Stop으로 표시
+            }
+        });
+
+        this.toggleButton.addEventListener("mouseleave", () => {
+            this.updateButtonText(); // 원래 상태로 복구
+        });
+
         // 버튼 클릭 이벤트 추가
         this.toggleButton.addEventListener("click", () => {
             if (!this.currentUrl) return;
@@ -66,6 +79,7 @@ export default class MusicNotePlugin extends Plugin {
         if (audioUrl) {
             this.currentUrl = audioUrl;
             this.toggleButton.style.display = "block"; // 버튼 보이기
+            this.updateButtonText();
         } else {
             this.currentUrl = null;
             this.toggleButton.style.display = "none"; // 버튼 숨기기
@@ -109,8 +123,8 @@ export default class MusicNotePlugin extends Plugin {
             this.audio.play().catch(error => console.log("Audio play failed:", error));
         }
 
-        this.toggleButton.textContent = "Stop";
         this.isPlaying = true;
+        this.updateButtonText(); // 버튼 텍스트 업데이트
     }
 
     private stopAudio() {
@@ -124,11 +138,14 @@ export default class MusicNotePlugin extends Plugin {
             this.hiddenIframe = null;
         }
 
-        if (this.toggleButton) {
-            this.toggleButton.textContent = "Play";
-        }
-
         this.isPlaying = false;
+        this.updateButtonText(); // 버튼 텍스트 업데이트
+    }
+
+    private updateButtonText() {
+        if (this.toggleButton) {
+            this.toggleButton.textContent = this.isPlaying ? "Play" : "Stop";
+        }
     }
 
     private getYouTubeEmbedUrl(url: string): string {
@@ -157,18 +174,15 @@ export default class MusicNotePlugin extends Plugin {
 
     private handleScroll(event: Event) {
         if (!this.currentUrl || this.userStopped) return; // 사용자가 Stop을 눌렀다면 자동 재생 안함
-
         if (!this.scrollContainer) return;
 
         const scrollTop = this.scrollContainer.scrollTop || 0;
 
         if (scrollTop === 0) {
-            // 최상단이면 Stop
             if (this.isPlaying) {
                 this.stopAudio();
             }
         } else {
-            // 스크롤 내리면 Play
             if (!this.isPlaying) {
                 this.playAudio();
             }
